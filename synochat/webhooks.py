@@ -172,12 +172,3 @@ class IncomingWebHook(object):
 	@version.setter
 	def version(self, version):
 		self.__version = version
-
-
-"""
-data = {"text": text.replace('&','och')}
-to_send = f"payload={json.dumps(data)}"
-resource = f"https://chat.flybogatan.com/webapi/entry.cgi?api=SYNO.Chat.External&method=incoming&version=2&token={api_token}"
-result = requests.post(resource, data=to_send)
-print(result.text)
-"""
