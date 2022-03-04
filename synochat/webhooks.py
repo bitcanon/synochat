@@ -99,7 +99,7 @@ class IncomingWebHook(object):
 			elif error_code == 104:
 				raise InvalidVersionError()
 			elif error_code == 117:
-				raise UnknownPayloadError()
+				raise InvalidPayloadError()
 			elif error_code == 404:
 				raise InvalidTokenError()
 			else:
