@@ -106,7 +106,6 @@ class IncomingWebHook(object):
 				print(response.text)
 				raise UnknownApiError()
 
-
 		return True
 
 	@property
@@ -172,3 +171,34 @@ class IncomingWebHook(object):
 	@version.setter
 	def version(self, version):
 		self.__version = version
+
+class SlashCommand(object):
+	""" Class definition of a slash command in Synology Chat. """
+
+	def __init__(self, request, token):
+		""" Initiate the object. """
+		self.__client_token = token
+		self.__server_token = request.form['token']
+		self.__user_id 		= request.form['user_id']
+		self.__username 	= request.form['username']
+		self.__text 		= request.form['text']
+		
+	def authenticate(self):
+		""" Compare the client and server API token. """
+		if self.__client_token != self.__server_token:
+			raise InvalidTokenError()
+
+	def createResponse(self, text, file_url=None):
+		""" Send a text message to the channel associated with the token. """
+
+		# Authenticate using the client token
+		self.authenticate()
+
+		returnDict = {'token': self.__client_token, 'text': text, 'user_id': self.__user_id, 'username': self.__username}
+		return returnDict
+
+	def invalidTokenResponse(self):
+		""" Return an invalid token HTTP response. """
+		response = {'success': False}
+		return json.dumps(response), 403
+
