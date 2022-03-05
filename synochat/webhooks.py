@@ -175,13 +175,17 @@ class IncomingWebHook(object):
 class SlashCommand(object):
 	""" Class definition of a slash command in Synology Chat. """
 
-	def __init__(self, request, token):
+	def __init__(self, request, token, verbose=False):
 		""" Initiate the object. """
 		self.__client_token = token
 		self.__server_token = request.form['token']
 		self.__user_id 		= request.form['user_id']
 		self.__username 	= request.form['username']
 		self.__text 		= request.form['text']
+		self.__request		= request
+
+		if verbose:
+			self.showDebug()
 		
 	def authenticate(self):
 		""" Compare the client and server API token. """
@@ -202,3 +206,18 @@ class SlashCommand(object):
 		response = {'success': False}
 		return json.dumps(response), 403
 
+	def showDebug(self):
+		""" Show debug information. """
+		print('----------------------')
+		print('Incoming HTTP request:')
+		print('----------------------')
+		print(f" Client Token    : {self.__client_token}")
+		print(f" Server Token    : {self.__server_token}")
+		print(f" User ID         : {self.__user_id}")
+		print(f" Username        : {self.__username}")
+		print(f" Text            : {self.__text}")
+		print(f" URL             : {self.__request.url}")
+		print(f" User Agent      : {self.__request.user_agent}")
+		print(f" Content Type    : {self.__request.content_type}")
+		print(f" Remote Address  : {self.__request.remote_addr}")
+		print(f" HTTP Method     : {self.__request.method}")
