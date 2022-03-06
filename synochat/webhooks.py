@@ -172,6 +172,60 @@ class IncomingWebHook(object):
 	def version(self, version):
 		self.__version = version
 
+class Parameter(object):
+	""" Slash command parameter. """
+
+	def __init__(self, name, valid_input, optional=False):
+		""" Initiate the object. """
+		self.__name = name
+		self.__value = None
+		self.__optional = optional
+		self.__is_valid = False
+
+		# Parse valid_input as either: 
+		# 'opt1|opt2|opt3' or as ['opt1', 'opt2', 'opt3']
+		if isinstance(valid_input, str):
+			self.__valid_input = valid_input.split('|')
+		elif isinstance(valid_input, list):
+			self.__valid_input = valid_input
+
+	def isValid(self):
+		"""
+		Returns True if this parameter value, which is received from the
+		Synology Chat client, is present in the valid_input list
+		of this parameter object.
+		"""
+		return self.__is_valid
+
+	@property
+	def value(self):
+		return self.__value
+
+	@value.setter
+	def value(self, value):
+		self.__value = value
+
+	@property
+	def is_valid(self):
+		return self.__is_valid
+
+	@is_valid.setter
+	def is_valid(self, is_valid):
+		self.__is_valid = is_valid
+
+	@property
+	def name(self):
+		return self.__name
+
+	@property
+	def valid_input(self):
+		return self.__valid_input
+
+	@property
+	def optional(self):
+		return self.__optional
+
+
 class SlashCommand(object):
 	""" Class definition of a slash command in Synology Chat. """
 
@@ -183,10 +237,61 @@ class SlashCommand(object):
 		self.__username 	= request.form['username']
 		self.__text 		= request.form['text']
 		self.__request		= request
+		self.__parameters   = []
 
 		if verbose:
 			self.showDebug()
-		
+
+	@property
+	def text(self):
+		return self.__text
+
+	def addParameter(self, name, valid_input='*', optional=False):
+		""" Add parameter to the slash command. """
+
+		parameter = Parameter(name, valid_input, optional)
+		self.__parameters.append(parameter)
+		return parameter
+
+	def getParameter(self, name):
+		""" Get a parameter object by name. """
+		for param in self.__parameters:
+			if param.name == name:
+				return param
+		return None
+
+	def parseParameters(self):
+		""" 
+		Parse the incoming text string received from the Synology Chat client.
+
+		Example: /command opt1|opt2 param2 [param3]
+		 - '/command'  - the slash command identifier.
+		 - 'opt1|opt2' - the first parameter. It must be equal to either 'opt1' or 'opt2'.
+		 - 'param2'    - the seconds parameter. It must be present and can contain any value.
+		 - 'param3'    - the third parameter. It is optional and can contain any value.
+		"""
+
+		# Split the command into a list() and remove the '/command' item from the list
+		command_parameters = self.__text.split()[1:]
+
+		# Loop through the parameters defined in this slash command
+		for index, parameter in enumerate(self.__parameters):
+
+			if parameter.optional:
+				if 0 <= index < len(command_parameters):
+					parameter.value = command_parameters[index]
+				else:
+					parameter.value = None
+			else:
+				try:
+					parameter.value = command_parameters[index]
+				except IndexError:
+					raise ParameterParseError()
+			if parameter.value in parameter.valid_input or '*' in parameter.valid_input:
+				parameter.is_valid = True
+			#print(f"[{index}] Parsing {parameter.name}, valid_input='{parameter.valid_input}'")
+			#print(f" - value = '{parameter.value}', is_valid = {parameter.is_valid}")
+
 	def authenticate(self):
 		""" Compare the client and server API token. """
 		if self.__client_token != self.__server_token:
@@ -221,3 +326,10 @@ class SlashCommand(object):
 		print(f" Content Type    : {self.__request.content_type}")
 		print(f" Remote Address  : {self.__request.remote_addr}")
 		print(f" HTTP Method     : {self.__request.method}")
+
+	def showParams(self):
+		print('----------------------')
+		print('Parameters:')
+		print('----------------------')
+		for param in self.__parameters:
+			print(f"{param.name} = {param.valid_input}")
