@@ -238,6 +238,7 @@ class SlashCommand(object):
 		self.__text 		= request.form['text']
 		self.__request		= request
 		self.__parameters   = []
+		self.__verbose = verbose
 
 		if verbose:
 			self.showDebug()
@@ -246,10 +247,15 @@ class SlashCommand(object):
 	def text(self):
 		return self.__text
 
-	def addParameter(self, name, valid_input='*', optional=False):
-		""" Add parameter to the slash command. """
+	def addRequiredParameter(self, name, valid_input='*'):
+		""" Add required parameter to the slash command. """
+		parameter = Parameter(name, valid_input, optional=False)
+		self.__parameters.append(parameter)
+		return parameter
 
-		parameter = Parameter(name, valid_input, optional)
+	def addOptionalParameter(self, name):
+		""" Add optional parameter to the slash command. """
+		parameter = Parameter(name, valid_input='*', optional=True)
 		self.__parameters.append(parameter)
 		return parameter
 
@@ -276,21 +282,41 @@ class SlashCommand(object):
 
 		# Loop through the parameters defined in this slash command
 		for index, parameter in enumerate(self.__parameters):
-
+			# Handle optional parameter
+			print(f"command_parameters = {str(command_parameters)}")
 			if parameter.optional:
-				if 0 <= index < len(command_parameters):
-					parameter.value = command_parameters[index]
-				else:
-					parameter.value = None
+				print(f" * parsing '{parameter.name}' which is an optional parameter...")
+				# Try to find this parameter in command_parameters
+				for command_parameter in command_parameters:
+					print(f"   checking command_parameter = {str(command_parameter)}")
+					if parameter.name in command_parameter:
+						# If the parameter has a value (ex: delay=5) then
+						# save the value in the parameter object.
+						print(f"   found match for '{parameter.name}'")
+						print(f"    - setting name  = '{parameter.name}'")
+						parameter.is_valid = True
+						param_list = command_parameter.split('=')
+						if len(param_list) == 2:
+							parameter.value = param_list[1]
+						else:
+							parameter.value = None
+						print(f"    - setting value = '{parameter.value}'")
+			# Handle positional/required parameter
 			else:
+				print(f" * parsing '{parameter.name}' which is a required parameter...")
+				print(f"    - setting name  = '{parameter.name}'")
 				try:
 					parameter.value = command_parameters[index]
+					parameter.is_valid = True
+					print(f"    - setting value = '{parameter.value}'")
 				except IndexError:
 					raise ParameterParseError()
-			if parameter.value in parameter.valid_input or '*' in parameter.valid_input:
-				parameter.is_valid = True
-			#print(f"[{index}] Parsing {parameter.name}, valid_input='{parameter.valid_input}'")
-			#print(f" - value = '{parameter.value}', is_valid = {parameter.is_valid}")
+			#if parameter.value in parameter.valid_input: ## or '*' in parameter.valid_input:
+			#	parameter.is_valid = True
+
+		if self.__verbose:
+			self.showParams()
+
 
 	def authenticate(self):
 		""" Compare the client and server API token. """
@@ -331,5 +357,7 @@ class SlashCommand(object):
 		print('----------------------')
 		print('Parameters:')
 		print('----------------------')
-		for param in self.__parameters:
-			print(f"{param.name} = {param.valid_input}")
+		for index, parameter in enumerate(self.__parameters):
+			# print(f"{parameter.name} = {parameter.valid_input}")
+			print(f"[{index}] Parsing {parameter.name}, valid_input='{parameter.valid_input}'")
+			print(f" - {parameter.name} = '{parameter.value}', is_valid = {parameter.is_valid}")
