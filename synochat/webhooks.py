@@ -175,27 +175,37 @@ class IncomingWebHook(object):
 class Parameter(object):
 	""" Slash command parameter. """
 
-	def __init__(self, name, valid_input, optional=False):
+	def __init__(self, name, optional=False):
 		""" Initiate the object. """
 		self.__name = name
 		self.__value = None
 		self.__optional = optional
-		self.__is_valid = False
+		self.__detected = False
 
-		# Parse valid_input as either: 
-		# 'opt1|opt2|opt3' or as ['opt1', 'opt2', 'opt3']
-		if isinstance(valid_input, str):
-			self.__valid_input = valid_input.split('|')
-		elif isinstance(valid_input, list):
-			self.__valid_input = valid_input
+	def __str__(self):
+		""" Define how the print() method should print the object. """
+		object_type = str(type(self))
+		return object_type + ": " + str(self.as_dict())
 
-	def isValid(self):
-		"""
-		Returns True if this parameter value, which is received from the
-		Synology Chat client, is present in the valid_input list
-		of this parameter object.
-		"""
-		return self.__is_valid
+	def __repr__(self):
+		""" Define how the object is represented when output to console. """
+
+		class_name          = type(self).__name__
+		name                = f"name = '{self.name}'"
+		value               = f"value = '{self.value}'"
+		optional            = f"optional = {self.optional}"
+		detected            = f"detected = {self.detected}"
+
+		return f"{class_name}({name}, {value}, {optional}, {detected})"
+
+	def as_dict(self):
+		""" Return the object properties in a dictionary. """
+		return {
+			'name': self.name,
+			'value': self.value,
+			'optional': self.optional,
+			'detected': self.detected,
+		}
 
 	@property
 	def value(self):
@@ -206,20 +216,16 @@ class Parameter(object):
 		self.__value = value
 
 	@property
-	def is_valid(self):
-		return self.__is_valid
+	def detected(self):
+		return self.__detected
 
-	@is_valid.setter
-	def is_valid(self, is_valid):
-		self.__is_valid = is_valid
+	@detected.setter
+	def detected(self, detected):
+		self.__detected = detected
 
 	@property
 	def name(self):
 		return self.__name
-
-	@property
-	def valid_input(self):
-		return self.__valid_input
 
 	@property
 	def optional(self):
@@ -229,14 +235,13 @@ class Parameter(object):
 class SlashCommand(object):
 	""" Class definition of a slash command in Synology Chat. """
 
-	def __init__(self, request, token, verbose=False):
+	def __init__(self, data, token, verbose=False):
 		""" Initiate the object. """
 		self.__client_token = token
-		self.__server_token = request.form['token']
-		self.__user_id 		= request.form['user_id']
-		self.__username 	= request.form['username']
-		self.__text 		= request.form['text']
-		self.__request		= request
+		self.__server_token = data['token']
+		self.__user_id 		= data['user_id']
+		self.__username 	= data['username']
+		self.__text 		= data['text']
 		self.__parameters   = []
 		self.__verbose = verbose
 
@@ -247,15 +252,15 @@ class SlashCommand(object):
 	def text(self):
 		return self.__text
 
-	def addRequiredParameter(self, name, valid_input='*'):
+	def addPositionalParameter(self, name):
 		""" Add required parameter to the slash command. """
-		parameter = Parameter(name, valid_input, optional=False)
+		parameter = Parameter(name, optional=False)
 		self.__parameters.append(parameter)
 		return parameter
 
 	def addOptionalParameter(self, name):
 		""" Add optional parameter to the slash command. """
-		parameter = Parameter(name, valid_input='*', optional=True)
+		parameter = Parameter(name, optional=True)
 		self.__parameters.append(parameter)
 		return parameter
 
@@ -282,41 +287,31 @@ class SlashCommand(object):
 
 		# Loop through the parameters defined in this slash command
 		for index, parameter in enumerate(self.__parameters):
-			# Handle optional parameter
-			print(f"command_parameters = {str(command_parameters)}")
-			if parameter.optional:
-				print(f" * parsing '{parameter.name}' which is an optional parameter...")
+
+			if parameter.optional: # Handle optional parameter
+				
 				# Try to find this parameter in command_parameters
 				for command_parameter in command_parameters:
-					print(f"   checking command_parameter = {str(command_parameter)}")
 					if parameter.name in command_parameter:
+						
 						# If the parameter has a value (ex: delay=5) then
 						# save the value in the parameter object.
-						print(f"   found match for '{parameter.name}'")
-						print(f"    - setting name  = '{parameter.name}'")
-						parameter.is_valid = True
+						parameter.detected = True
 						param_list = command_parameter.split('=')
 						if len(param_list) == 2:
 							parameter.value = param_list[1]
 						else:
 							parameter.value = None
-						print(f"    - setting value = '{parameter.value}'")
-			# Handle positional/required parameter
-			else:
-				print(f" * parsing '{parameter.name}' which is a required parameter...")
-				print(f"    - setting name  = '{parameter.name}'")
+
+			else: # Handle positional parameter
 				try:
 					parameter.value = command_parameters[index]
-					parameter.is_valid = True
-					print(f"    - setting value = '{parameter.value}'")
+					parameter.detected = True
 				except IndexError:
 					raise ParameterParseError()
-			#if parameter.value in parameter.valid_input: ## or '*' in parameter.valid_input:
-			#	parameter.is_valid = True
 
 		if self.__verbose:
 			self.showParams()
-
 
 	def authenticate(self):
 		""" Compare the client and server API token. """
@@ -347,17 +342,11 @@ class SlashCommand(object):
 		print(f" User ID         : {self.__user_id}")
 		print(f" Username        : {self.__username}")
 		print(f" Text            : {self.__text}")
-		print(f" URL             : {self.__request.url}")
-		print(f" User Agent      : {self.__request.user_agent}")
-		print(f" Content Type    : {self.__request.content_type}")
-		print(f" Remote Address  : {self.__request.remote_addr}")
-		print(f" HTTP Method     : {self.__request.method}")
 
 	def showParams(self):
 		print('----------------------')
 		print('Parameters:')
 		print('----------------------')
 		for index, parameter in enumerate(self.__parameters):
-			# print(f"{parameter.name} = {parameter.valid_input}")
-			print(f"[{index}] Parsing {parameter.name}, valid_input='{parameter.valid_input}'")
-			print(f" - {parameter.name} = '{parameter.value}', is_valid = {parameter.is_valid}")
+			print(f"[{index}] Parsing {parameter.name}, value='{parameter.value}'")
+			print(f" - {parameter.name} = '{parameter.value}', detected = {parameter.detected}")
