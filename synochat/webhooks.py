@@ -207,6 +207,10 @@ class Parameter(object):
 			'detected': self.detected,
 		}
 
+	def isPresent(self):
+		""" More user-friendly/readable version of 'detected'. """
+		return self.detected
+
 	@property
 	def value(self):
 		return self.__value
@@ -276,7 +280,7 @@ class SlashCommand(object):
 		command_parameters = self.__text.split()[1:]
 
 		# Handle optional parameter
-		if parameter.optional: 
+		if parameter.optional:
 
 			# Try to find this parameter in command_parameters
 			for command_parameter in command_parameters:
@@ -292,7 +296,7 @@ class SlashCommand(object):
 					else:
 						parameter.value = None
 		# Handle positional parameter
-		else: 
+		else:
 			try:
 				index = len(self.__parameters)
 				parameter.value = command_parameters[index]
