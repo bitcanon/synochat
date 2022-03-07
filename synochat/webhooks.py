@@ -175,7 +175,7 @@ class IncomingWebHook(object):
 class Parameter(object):
 	""" Slash command parameter. """
 
-	def __init__(self, name, optional=False):
+	def __init__(self, name, optional):
 		""" Initiate the object. """
 		self.__name = name
 		self.__value = None
@@ -246,21 +246,16 @@ class SlashCommand(object):
 		self.__verbose = verbose
 
 		if verbose:
-			self.showDebug()
+			self.showHttpDebug()
 
 	@property
 	def text(self):
 		return self.__text
 
-	def addPositionalParameter(self, name):
-		""" Add required parameter to the slash command. """
-		parameter = Parameter(name, optional=False)
-		self.__parameters.append(parameter)
-		return parameter
-
-	def addOptionalParameter(self, name):
-		""" Add optional parameter to the slash command. """
-		parameter = Parameter(name, optional=True)
+	def addParameter(self, name, optional=False):
+		""" Parse and add a parameter to the slash command. """
+		parameter = Parameter(name, optional)
+		self.parseParameter(parameter)
 		self.__parameters.append(parameter)
 		return parameter
 
@@ -271,47 +266,41 @@ class SlashCommand(object):
 				return param
 		return None
 
-	def parseParameters(self):
+	def parseParameter(self, parameter):
 		""" 
 		Parse the incoming text string received from the Synology Chat client.
-
-		Example: /command opt1|opt2 param2 [param3]
-		 - '/command'  - the slash command identifier.
-		 - 'opt1|opt2' - the first parameter. It must be equal to either 'opt1' or 'opt2'.
-		 - 'param2'    - the seconds parameter. It must be present and can contain any value.
-		 - 'param3'    - the third parameter. It is optional and can contain any value.
+		Example: /command param1 param2 [param3] [param4=1337]
 		"""
 
 		# Split the command into a list() and remove the '/command' item from the list
 		command_parameters = self.__text.split()[1:]
 
-		# Loop through the parameters defined in this slash command
-		for index, parameter in enumerate(self.__parameters):
+		# Handle optional parameter
+		if parameter.optional: 
 
-			if parameter.optional: # Handle optional parameter
-				
-				# Try to find this parameter in command_parameters
-				for command_parameter in command_parameters:
-					if parameter.name in command_parameter:
-						
-						# If the parameter has a value (ex: delay=5) then
-						# save the value in the parameter object.
-						parameter.detected = True
-						param_list = command_parameter.split('=')
-						if len(param_list) == 2:
-							parameter.value = param_list[1]
-						else:
-							parameter.value = None
+			# Try to find this parameter in command_parameters
+			for command_parameter in command_parameters:
+				if parameter.name in command_parameter:
 
-			else: # Handle positional parameter
-				try:
-					parameter.value = command_parameters[index]
+					# If the parameter has a value (ex: delay=5) then
+					# save the value in the parameter object,
+					# if not we set the value to None.
 					parameter.detected = True
-				except IndexError:
-					raise ParameterParseError()
-
+					param_list = command_parameter.split('=')
+					if len(param_list) == 2:
+						parameter.value = param_list[1]
+					else:
+						parameter.value = None
+		# Handle positional parameter
+		else: 
+			try:
+				index = len(self.__parameters)
+				parameter.value = command_parameters[index]
+				parameter.detected = True
+			except IndexError:
+				raise ParameterParseError()
 		if self.__verbose:
-			self.showParams()
+			self.showParamDebug(parameter)
 
 	def authenticate(self):
 		""" Compare the client and server API token. """
@@ -332,7 +321,7 @@ class SlashCommand(object):
 		response = {'success': False}
 		return json.dumps(response), 403
 
-	def showDebug(self):
+	def showHttpDebug(self):
 		""" Show debug information. """
 		print('----------------------')
 		print('Incoming HTTP request:')
@@ -342,11 +331,11 @@ class SlashCommand(object):
 		print(f" User ID         : {self.__user_id}")
 		print(f" Username        : {self.__username}")
 		print(f" Text            : {self.__text}")
+		print('----------------------')
 
-	def showParams(self):
-		print('----------------------')
-		print('Parameters:')
-		print('----------------------')
-		for index, parameter in enumerate(self.__parameters):
-			print(f"[{index}] Parsing {parameter.name}, value='{parameter.value}'")
-			print(f" - {parameter.name} = '{parameter.value}', detected = {parameter.detected}")
+	def showParamDebug(self, parameter):
+		index = len(self.__parameters)
+		print(f"Parsing parameter {index}: '{parameter.name}'...")
+		print(f" - value    = {parameter.value}")
+		print(f" - optional = {parameter.optional}")
+		print(f" - detected = {parameter.detected}")
