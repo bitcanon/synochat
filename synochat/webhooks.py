@@ -12,7 +12,7 @@ It can also help you setting up the integration within the Chat client.
 Source: https://kb.synology.com/en-us/DSM/tutorial/How_to_configure_webhooks_and_slash_commands_in_Chat_Integration#x_anchor_id5
 '''
 
-class IncomingWebHook(object):
+class IncomingWebhook(object):
 	""" Class definition of an incoming webhook in Synology Chat. """
 
 	def __init__(self, hostname, token, port=443, verify_ssl=True):
@@ -239,9 +239,9 @@ class Parameter(object):
 class SlashCommand(object):
 	""" Class definition of a slash command in Synology Chat. """
 
-	def __init__(self, data, token, verbose=False):
+	def __init__(self, data, verbose=False):
 		""" Initiate the object. """
-		self.__client_token = token
+		self.__client_token = None
 		self.__server_token = data['token']
 		self.__user_id 		= data['user_id']
 		self.__username 	= data['username']
@@ -306,17 +306,13 @@ class SlashCommand(object):
 		if self.__verbose:
 			self.showParamDebug(parameter)
 
-	def authenticate(self):
+	def authenticate(self, token):
 		""" Compare the client and server API token. """
-		if self.__client_token != self.__server_token:
-			raise InvalidTokenError()
+		self.__client_token = token
+		return token == self.__server_token
 
 	def createResponse(self, text, file_url=None):
 		""" Send a text message to the channel associated with the token. """
-
-		# Authenticate using the client token
-		self.authenticate()
-
 		returnDict = {'token': self.__client_token, 'text': text, 'user_id': self.__user_id, 'username': self.__username}
 		return returnDict
 
@@ -343,3 +339,150 @@ class SlashCommand(object):
 		print(f" - value    = {parameter.value}")
 		print(f" - optional = {parameter.optional}")
 		print(f" - detected = {parameter.detected}")
+
+class OutgoingWebhook(object):
+	""" Class definition for an Outgoing Webhook. """
+
+	""" Example of an Outgoing Webhook received from Synology Chat.
+	('token', 'f69oQY4l5v7UVzKqmVfw1MQgFGZmxwODg1sndKIqsz8grAqYnKyerCRISQa1MiJj'), 
+	('channel_id', '34'), 
+	('channel_type', '1'), 
+	('channel_name', 'Labb'), 
+	('user_id', '4'), 
+	('username', 'mikael'), 
+	('post_id', '146028888128'), 
+	('thread_id', '0'), 
+	('timestamp', '1646827836131'), 
+	('text', 'Tjena'), 
+	('trigger_word', 'Tjena')
+	"""
+
+	def __init__(self, data, token, verbose=False):
+		""" Initiate the object. """
+		self.__client_token = token
+		self.__server_token = data['token']
+		self.__channel_id 	= data['channel_id']
+		self.__channel_type = data['channel_type']
+		self.__channel_name = data['channel_name']
+		self.__user_id 		= data['user_id']
+		self.__username 	= data['username']
+		self.__post_id 		= data['post_id']
+		self.__thread_id 	= data['thread_id']
+		self.__timestamp 	= data['timestamp']
+		self.__text 		= data['text']
+		self.__trigger_word = data['trigger_word']
+		self.__verbose 		= verbose
+
+		#if verbose:
+			#self.showHttpDebug()
+
+	def __str__(self):
+		""" Define how the print() method should print the object. """
+		object_type = str(type(self))
+		return object_type + ": " + str(self.as_dict())
+
+	def __repr__(self):
+		""" Define how the object is represented when output to console. """
+
+		class_name     	= type(self).__name__
+		client_token   	= f"client_token = '{self.client_token}'"
+		server_token   	= f"server_token = '{self.server_token}'"
+		channel_id     	= f"channel_id = {self.channel_id}"
+		channel_type   	= f"channel_type = {self.channel_type}"
+		channel_name   	= f"channel_name = '{self.channel_name}'"
+		user_id        	= f"user_id = {self.user_id}"
+		username       	= f"username = '{self.username}'"
+		post_id        	= f"post_id = {self.post_id}"
+		thread_id      	= f"thread_id = {self.thread_id}"
+		timestamp      	= f"timestamp = {self.timestamp}"
+		text           	= f"text = '{self.text}'"
+		trigger_word  	= f"trigger_word = '{self.trigger_word}'"
+		verbose 		= f"verbose = {self.verbose}"
+
+		return f"{class_name}({client_token}, {server_token}, {channel_id}, {channel_type}, {channel_name}, {user_id}, {username}, {post_id}, {thread_id}, {timestamp}, {text}, {trigger_word}, {verbose}, )"
+
+	def as_dict(self):
+		""" Return the object properties in a dictionary. """
+		return {
+			'client_token': self.client_token,
+			'server_token': self.server_token,
+			'channel_id': self.channel_id,
+			'channel_type': self.channel_type,
+			'channel_name': self.channel_name,
+			'user_id': self.user_id,
+			'username': self.username,
+			'post_id': self.post_id,
+			'thread_id': self.thread_id,
+			'timestamp': self.timestamp,
+			'text': self.text,
+			'trigger_word': self.trigger_word,
+			'verbose': self.verbose,
+		}
+
+	def authenticate(self, token):
+		""" Compare the client and server API token. """
+		self.__client_token = token
+		return token == self.__server_token
+
+	def createResponse(self, text):
+		""" Send a text message to the channel associated with the token. """
+		payload_data = {
+			'token': self.__client_token,
+			'text': text,
+			'user_id': self.__user_id,
+			'username': self.__username,
+		}
+
+		return json.dumps(payload_data)
+
+	@property
+	def client_token(self):
+		return self.__client_token
+
+	@property
+	def server_token(self):
+		return self.__server_token
+
+	@property
+	def channel_id(self):
+		return self.__channel_id
+
+	@property
+	def channel_type(self):
+		return self.__channel_type
+
+	@property
+	def channel_name(self):
+		return self.__channel_name
+
+	@property
+	def user_id(self):
+		return self.__user_id
+
+	@property
+	def username(self):
+		return self.__username
+
+	@property
+	def post_id(self):
+		return self.__post_id
+
+	@property
+	def thread_id(self):
+		return self.__thread_id
+
+	@property
+	def timestamp(self):
+		return self.__timestamp
+
+	@property
+	def text(self):
+		return self.__text
+
+	@property
+	def trigger_word(self):
+		return self.__trigger_word
+
+	@property
+	def verbose(self):
+		return self.__verbose
