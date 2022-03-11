@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='synochat',
-    version='1.0.0',
+    version='1.0.1',
     author='Mikael Schultz',
     author_email='mikael@bitcanon.com',
     description='A library for the Synology Chat API written in Python 3.',
@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/bitcanon/synochat',
     packages=setuptools.find_packages(),
-    install_requires=['requests'],
+    install_requires=['requests', 'flask'],
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
