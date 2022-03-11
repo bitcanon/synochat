@@ -82,6 +82,15 @@ Note that this will still use HTTPS (https://...) in the request to the Synology
 ```python
 webhook.use_https = False
 ```
+It is also possible to change these settings via class properties:
+```python
+webhook.hostname = "nas.yourdomain.com"
+webhook.port = "443"
+webhook.use_https = True
+webhook.verify_ssl = True
+webhook.token = "..."
+```
+Make sure to set them before calling the `send()` method.
 
 ### Exceptions
 The `send()` method will raise an exception if the request to the Synology Chat server fails for some reason.

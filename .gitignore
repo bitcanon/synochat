@@ -156,3 +156,4 @@ cython_debug/
 
 # API Testing Files
 test.py
+demo*.py
