@@ -57,6 +57,9 @@ Define the *link text* by appending `|text` to the link tag.
 ```python
 webhook.send('Check out <https://www.synology.com/en-us/dsm/feature/chat|Synology Chat>!')
 ```
+This is how it might look in the Synology Chat client:
+
+<img src="/img/incoming-webhook-with-link.png" width="480">
 
 ### Add an image
 Add an image file to the message by passing a URL in the `file_url` parameter.
