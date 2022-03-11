@@ -34,7 +34,7 @@ class InvalidVersionError(Error):
 
 class InvalidPayloadError(Error):
     """ Raised when an invalid payload is used. """
-    def __init__(self, message="Request failed due to use of an invalid message payload."):
+    def __init__(self, message="Request failed due to use of an invalid message payload. If file_url is used, check that the URL is valid."):
         self.message = message
         super().__init__(self.message)
 
