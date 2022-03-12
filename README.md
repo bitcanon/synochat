@@ -99,3 +99,70 @@ Check out the examples or the exception files for more information.
 
 # Outgoing webhooks
 Outgoing webhooks listen for trigger words in Chat messages. When a trigger word is noticed, a call is made to the webhook associated with the trigger word.
+Consider the following example:
+
+<img src="/img/outgoing-webhook-settings.png" width="480">
+
+When the word `Ping` *(case sensitive)* is noticed in a chat message, a call is made to http://192.168.0.2:5001/echo
+
+## Code
+To setup the listening part of this functionality we can use the Flask framework, which is a lightweight web framework for Python.
+
+```python
+from flask import Flask, request
+
+from synochat.webhooks import OutgoingWebhook
+
+app = Flask(__name__)
+
+@app.route('/echo', methods=['POST'])
+def echo():
+	token = 'f69oQY4l5v7UVzKqmVfw1MQgFGZmxwODg1sndKIqsz8grAqYnKyerCRISQa1MiJj'
+	webhook = OutgoingWebhook(request.form, token, verbose=True)
+
+	if not webhook.authenticate(token):
+		return webhook.createResponse('Outgoing Webhook authentication failed: Token mismatch.')
+
+	print(webhook)
+
+	return webhook.createResponse('Pong')
+
+if __name__ == '__main__':
+   app.run('0.0.0.0', port=5001, debug = True)
+```
+
+The code is self explanatory. To debug the request you can use the `print(webhook)` method:
+```bash
+<class 'synochat.webhooks.OutgoingWebhook'>: {'client_token': 'f69oQY4l5v7UVzKqmVfw1MQgFGZmxwODg1sndKIqsz8grAqYnKyerCRISQa1MiJj', 'server_token': 'f69oQY4l5v7UVzKqmVfw1MQgFGZmxwODg1sndKIqsz8grAqYnKyerCRISQa1MiJj', 'channel_id': '34', 'channel_type': '1', 'channel_name': 'Labb', 'user_id': '4', 'username': 'mikael', 'post_id': '146028888230', 'thread_id': '0', 'timestamp': '1647060330657', 'text': 'Ping', 'trigger_word': 'Ping', 'verbose': True}
+```
+
+### Class properties
+To access the data from the outgoing webhook, use the **class properties** *(which are read-only)*:
+```python
+webhook.client_token
+webhook.server_token
+webhook.channel_id
+webhook.channel_type
+webhook.channel_name
+webhook.user_id
+webhook.username
+webhook.post_id
+webhook.thread_id
+webhook.timestamp
+webhook.text
+webhook.trigger_word
+webhook.verbose
+```
+
+### Add a link
+Like with an *incoming webhook* we can easily add a link to the response message with the `<` and `>` characters.
+```python
+webhook.createResponse('Send text with a link embedded <https://www.synology.com>')
+```
+
+Define the *link text* by appending `|text` to the link tag.
+```python
+webhook.createResponse('Check out <https://www.synology.com/en-us/dsm/feature/chat|Synology Chat>!')
+```
+
+# Slash commands
