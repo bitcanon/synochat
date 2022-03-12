@@ -24,17 +24,24 @@ $ pip install synochat
 ## Setting up integration
 Before we start coding we must setup the integration in the Synology Chat client.
 
-Do this by opening the Synology Chat client, either in the web application or the native desktop application, and go to **User Profile** > **Integration** and follow the instructions. Click [here](https://kb.synology.com/en-us/DSM/tutorial/How_to_configure_webhooks_and_slash_commands_in_Chat_Integration) for more help.
+Do this by opening the Synology Chat client, either in the *web application* or the *native desktop application*, and go to **User Profile** > **Integration** and follow the instructions. Click [here](https://kb.synology.com/en-us/DSM/tutorial/How_to_configure_webhooks_and_slash_commands_in_Chat_Integration) for more help.
 
-Take note of the Webhook-URL in the integration settings dialog. You need to extract two components from this link:
-* Hostname (chat.example.com)
-* Token (64 characters at the end of the line)
-
-**Important!** Do not include **%22** surrounding the token in the URL. The token should be *exactly 64 characters*.
-
+> Setting up integrations in the smartphone or tablet app is currently not available.
 
 # Incoming webhooks
-Using an *incoming webhook* we can post messages into a channel in Synology Chat. Besides sending just simple text to a channel we can also attach links and file uploads (which are available via HTTP).
+Using an **incoming webhook** we can post messages into a channel in Synology Chat. Besides sending just simple text to a channel we can also attach links and file uploads (which are available via HTTP).
+
+## Setting up integration
+Go to **User Profile** > **Integration** and follow the instructions.
+
+<img src="/img/incoming-webhook-settings.png" width="480">
+
+Take note of the **Webhook URL** in the integration settings dialog. You need to extract a few components from this link:
+* **Hostname:** For example *chat.example.com* or *192.168.0.2*
+* **Port:** For example *80*, *443*, *5000*, *5001*
+* **Token:** The *token* string (***64 characters*** at the end of the line)
+
+**Important!** Do not include **%22** surrounding the token in the URL. The token should be ***exactly 64 characters***.
 
 ## Code
 Use this simple code example to send a message to the chat channel associated with this token.
@@ -95,10 +102,10 @@ Make sure to set them before calling the `send()` method.
 ### Exceptions
 The `send()` method will raise an exception if the request to the Synology Chat server fails for some reason.
 
-Check out the examples or the exception files for more information.
+Check out the examples or the [exceptions](synochat/exceptions.py) file for more information.
 
 # Outgoing webhooks
-Outgoing webhooks listen for trigger words in Chat messages. When a trigger word is noticed, a call is made to the webhook associated with the trigger word.
+**Outgoing webhooks** listen for trigger words in chat messages. When a trigger word is detected, a call is made to the webhook associated with the trigger word.
 Consider the following example:
 
 <img src="/img/outgoing-webhook-settings.png" width="480">
