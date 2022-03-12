@@ -98,3 +98,4 @@ The `send()` method will raise an exception if the request to the Synology Chat 
 Check out the examples or the exception files for more information.
 
 # Outgoing webhooks
+Outgoing webhooks listen for trigger words in Chat messages. When a trigger word is noticed, a call is made to the webhook associated with the trigger word.
