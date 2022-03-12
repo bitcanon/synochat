@@ -165,4 +165,16 @@ Define the *link text* by appending `|text` to the link tag.
 webhook.createResponse('Check out <https://www.synology.com/en-us/dsm/feature/chat|Synology Chat>!')
 ```
 
+### Add an image
+Add an image file to the message by passing a URL in the `file_url` parameter.
+```python
+webhook.createResponse('Send text with a photo attached.', file_url='https://www.synology.com/img/company/branding/synology_logo.jpg')
+```
+
+### Add a file
+Or upload a file of any type by passing a URL to the file in the `file_url` parameter.
+```python
+webhook.createResponse('Send text with a file attached.', file_url='http://ipv4.download.thinkbroadband.com/5MB.zip'')
+```
+
 # Slash commands
