@@ -302,9 +302,15 @@ Now try to call this command in Synology Chat:
 
 The `addParameter()` method is in charge of adding an object of the `Parameter` class as well as to populate the object with the data received from the Synology Chat client.
 
-The `isPresent()` method is used to check if the parameter was included in the slash command. This method is mostly usable for optional parameters.
+The `authenticate()` method is used to compare the token of the Synology Chat server and the client script. It is not nessecary to call this method but *highly recommended* due to security concerns. 
 
-We can output the properties of a `Parameter` by using the `print()` method. This should be the output if running the above code example:
+The `createResponse()` method help us to compile a valid response to be returned to the Synology Chat server.
+
+The `isPresent()` method is used to check if the parameter was included in the slash command. This method is mostly usable for *optional parameters* but can also be used with *positional parameter* as for code consistency.
+
+We can output the properties of a `Parameter` by using the `print()` method. 
+
+If running the above code example, the output should look like this:
 
 ```python
 <class 'synochat.webhooks.Parameter'>: {'name': 'action', 'value': 'add',  'optional': False, 'detected': True}
@@ -314,12 +320,12 @@ We can output the properties of a `Parameter` by using the `print()` method. Thi
 ```
 
 ### Class properties
-To access the raw data from the *slash command*, use the **class property** *(which are read-only)*:
+To access the raw data from the *slash command*, use the **class property** *(read-only)*:
 ```python
 command.text
 ```
 
-To access the data from a *parameter*, use these **class properties** *(which are read-only)*.
+To access the data from a *parameter*, use these **class properties** *(read-only)*.
 ```python
 parameter.name
 parameter.value
