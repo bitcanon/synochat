@@ -224,6 +224,13 @@ count = command.addParameter('count', optional=True)
 time  = command.addParameter('time', optional=True)
 ```
 
+## Settings
+Go to the Integration settings of the Synology Chat client to setup a **slash command**:
+
+<img src="/img/slash-command-settings.png" width="480">
+
+It is now time for the implementation of this example.
+
 ## Code
 In order for us to setup the receiving end of the slash command we can use Flask here as well.
 
@@ -284,11 +291,13 @@ if __name__ == '__main__':
 
 Now try to call this command in Synology Chat:
 
-<img src="">
+<img src="/img/slash-command-send.png" width="600">
 
-The addParameter() method is in charge of adding an object of the `Parameter` class as well as to populate the object with the data received from the Synology Chat client.
+The `addParameter()` method is in charge of adding an object of the `Parameter` class as well as to populate the object with the data received from the Synology Chat client.
 
-We can output the properties of a `Parameter` by using the `print()` method:
+The `isPresent()` method is used to check if the parameter was included in the slash command. This method is mostly usable for optional parameters.
+
+We can output the properties of a `Parameter` by using the `print()` method. This should be the output if running the above code example:
 
 ```python
 <class 'synochat.webhooks.Parameter'>: {'name': 'action', 'value': 'add',  'optional': False, 'detected': True}
@@ -296,3 +305,22 @@ We can output the properties of a `Parameter` by using the `print()` method:
 <class 'synochat.webhooks.Parameter'>: {'name': 'delay',  'value': '5',    'optional': True,  'detected': True}
 <class 'synochat.webhooks.Parameter'>: {'name': 'silent', 'value': None,   'optional': True,  'detected': True}
 ```
+
+### Class properties
+To access the raw data from the *slash command*, use the **class property** *(which are read-only)*:
+```python
+command.text
+```
+
+To access the data from a *parameter*, use these **class properties** *(which are read-only)*.
+```python
+parameter.name
+parameter.value
+parameter.optional
+parameter.detected
+```
+
+# Final word
+This should be enough to get started using integrations with Synology Chat.
+
+Good luck! 😁
