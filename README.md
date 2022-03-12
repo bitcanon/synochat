@@ -178,3 +178,121 @@ webhook.createResponse('Send text with a file attached.', file_url='http://ipv4.
 ```
 
 # Slash commands
+With **slash commands** we can trigger outgoing webhooks by typing `/` in the text field of the Synology Chat client. In contrast to *outgoing webhooks* the response from the slash command is only visible to the user who triggered the command.
+
+## Parameters
+A **slash command** can also accept parameters, both *positional* and *optional*.
+
+### Positional parameters
+Positional parameters *must* appear in the correct order for them to be parsed correctly.
+
+Example:
+```bash
+/ping 1.1.1.1 count=4 time
+```
+In the example above we have a slash command named `/ping`.
+* `1.1.1.1` is the first positional parameter. The `name` is defined in the code, for example **ip**.
+
+**Important!** Positional parameters **must** be placed in the **first** part of the slash command *(before optional parameter)*.
+
+Example:
+```bash
+/command positionalParam1 positionalParam2 optionalParam1 optionalParam2
+```
+
+Define a parameter as **positional** by calling the `addParameter()` method, which creates a positional parameter by default. 
+```python
+ip = command.addParameter('ip')
+```
+
+### Optional parameters
+Optional parameters can appear in *any order* as long as they appear after the positional parameters.
+
+Example:
+```bash
+/ping 1.1.1.1 count=4 time
+```
+In the example above we have a slash command named `/ping`.
+* `count=4` is the first *optional parameter*. The `name` is **count** and the `value` is **4**.
+* `time` is the seconds *optional parameter*. The `name` is **time** and the `value` is **None**.
+
+**Important!** Optional parameters **must** be placed in the **last** part of the slash command *(after positional parameters)*.
+
+Define a parameter as **optional** by calling the `addParameter()` method with `optional=True`.
+```python
+count = command.addParameter('count', optional=True)
+time  = command.addParameter('time', optional=True)
+```
+
+## Code
+In order for us to setup the receiving end of the slash command we can use Flask here as well.
+
+```python
+from flask import Flask, request
+
+from synochat.webhooks import SlashCommand
+from synochat.exceptions import *
+
+app = Flask(__name__)
+
+@app.route('/slash', methods=['POST'])
+def slash():
+	token   = 'LnTEXv9xKBwJtmIiXttGvpKaccEDHVJU5No4XX6oTnt7BQnPxbDwsWey1Pb9g9V2'
+	command = SlashCommand(request.form)
+
+	if not command.authenticate(token):
+		return command.createResponse('Invalid token.')
+
+	# Check if the command parameters are valid
+	try:
+		action  = command.addParameter('action')
+		code    = command.addParameter('code',  optional=False)
+		delay   = command.addParameter('delay', optional=True)
+		silent  = command.addParameter('silent', optional=True)
+	except ParameterParseError:
+		return command.createResponse('Slash command failed because one or more parameters are missing.')
+
+	# Handle the first (positional) parameter
+	if action.isPresent():
+		print(action)
+	else:
+		print(f"Parameter 'action' not detected in the command.")
+
+	# Handle the second (positional) parameter
+	if code.isPresent():
+		print(code)
+	else:
+		print(f"Parameter 'code' not detected in the command.")
+
+	# Handle the third (optional) parameter
+	if delay.isPresent():
+		print(delay)
+	else:
+		print(f"Parameter 'delay' not detected in the command.")
+
+	# Handle the third (optional) parameter
+	if silent.isPresent():
+		print(silent)
+	else:
+		print(f"Parameter 'silent' not detected in the command.")
+
+	return command.createResponse('Slash command received.')
+
+if __name__ == '__main__':
+   app.run('0.0.0.0', port=5001, debug = True)
+```
+
+Now try to call this command in Synology Chat:
+
+<img src="">
+
+The addParameter() method is in charge of adding an object of the `Parameter` class as well as to populate the object with the data received from the Synology Chat client.
+
+We can output the properties of a `Parameter` by using the `print()` method:
+
+```python
+<class 'synochat.webhooks.Parameter'>: {'name': 'action', 'value': 'add',  'optional': False, 'detected': True}
+<class 'synochat.webhooks.Parameter'>: {'name': 'code',   'value': '1234', 'optional': False, 'detected': True}
+<class 'synochat.webhooks.Parameter'>: {'name': 'delay',  'value': '5',    'optional': True,  'detected': True}
+<class 'synochat.webhooks.Parameter'>: {'name': 'silent', 'value': None,   'optional': True,  'detected': True}
+```
