@@ -424,7 +424,7 @@ class OutgoingWebhook(object):
 		self.__client_token = token
 		return token == self.__server_token
 
-	def createResponse(self, text):
+	def createResponse(self, text, file_url=None):
 		""" Send a text message to the channel associated with the token. """
 		payload_data = {
 			'token': self.__client_token,
@@ -432,6 +432,10 @@ class OutgoingWebhook(object):
 			'user_id': self.__user_id,
 			'username': self.__username,
 		}
+		
+		# Check if there is a URL to include in the request
+		if file_url:
+			payload_data['file_url'] = file_url
 
 		return json.dumps(payload_data)
 
