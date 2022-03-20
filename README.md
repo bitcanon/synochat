@@ -99,6 +99,22 @@ webhook.token = "..."
 ```
 Make sure to set them before calling the `send()` method.
 
+### Rate limiting
+The Synology Chat API is rate limited so it's not possible to send messages inside a loop without a delay between posts. To handle this the `synochat` library implements a delay after a post has been created with the `send()` method.
+
+There are two properties available to change this behavior if you prefer to handle the `RateLimitException()` on your own instead.
+
+```python
+webhook.send_delay_enabled = False
+webhook.send_delay = 0.75
+```
+These properties can also be overridden in the class constructor if preferred.
+```python
+webhook = IncomingWebhook('192.168.0.2', token, port=5001, verify_ssl=False, send_delay_enabled=False, send_delay=1.5)
+```
+
+> The send delay is set to 0.5 seconds by default.
+
 ### Exceptions
 The `send()` method will raise an exception if the request to the Synology Chat server fails for some reason.
 

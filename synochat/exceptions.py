@@ -39,6 +39,13 @@ class InvalidPayloadError(Error):
         super().__init__(self.message)
 
 
+class RateLimitError(Error):
+    """ Raised when creating posts too fast. """
+    def __init__(self, message="Rate limit exceeded. Creating posts too fast."):
+        self.message = message
+        super().__init__(self.message)
+
+
 class UnknownApiError(Error):
     """
     Raised when an unknown error occurs.

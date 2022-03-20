@@ -1,5 +1,6 @@
 import json
 from requests import post
+from time import sleep
 
 from requests.compat import quote
 
@@ -15,7 +16,7 @@ Source: https://kb.synology.com/en-us/DSM/tutorial/How_to_configure_webhooks_and
 class IncomingWebhook(object):
 	""" Class definition of an incoming webhook in Synology Chat. """
 
-	def __init__(self, hostname, token, port=443, verify_ssl=True):
+	def __init__(self, hostname, token, port=443, verify_ssl=True, send_delay_enabled=True, send_delay=0.5):
 		""" Initiate the object. """
 		self.__hostname = hostname
 		self.__port = port
@@ -25,6 +26,8 @@ class IncomingWebhook(object):
 		self.__method = 'incoming'
 		self.__version = '2'
 		self.__token = token
+		self.__send_delay_enabled = send_delay_enabled
+		self.__send_delay = send_delay
 
 		# Automatically disable HTTPS on port 80 and 5000
 		if port == 80 or port == 5000:
@@ -60,6 +63,10 @@ class IncomingWebhook(object):
 		# Query the Synology Chat API and save the response
 		response = post(url, data=payload, headers=headers, params=params, verify=self.__verify_ssl)
 		
+		# Avoid API rate limit error, wail 0.5 seconds (default) between post creations
+		if self.send_delay_enabled:
+			sleep(self.send_delay)
+
 		return self.checkResponse(response)
 
 	def checkResponse(self, response):
@@ -77,9 +84,7 @@ class IncomingWebhook(object):
 			print(f"Status code: {status_code}")
 
 		# Check API response status codes
-		if response_array['success']:
-			print('OK')
-		else:
+		if not response_array['success']:
 			try:
 				error_code = response_array['error']['code']
 			except KeyError:
@@ -89,8 +94,6 @@ class IncomingWebhook(object):
 				error_message = response_array['error']['errors']
 			except KeyError:
 				error_message = 'Unknown error.'
-
-			print(f"Error {error_code}: {error_message}")
 
 			if error_code == 102:
 				raise InvalidApiError()
@@ -102,9 +105,10 @@ class IncomingWebhook(object):
 				raise InvalidPayloadError()
 			elif error_code == 404:
 				raise InvalidTokenError()
+			elif error_code == 411:
+				raise RateLimitError()
 			else:
-				print(response.text)
-				raise UnknownApiError()
+				raise UnknownApiError(f'"Error {error_code}: {error_message}"')
 
 		return True
 
@@ -171,6 +175,23 @@ class IncomingWebhook(object):
 	@version.setter
 	def version(self, version):
 		self.__version = version
+
+	@property
+	def send_delay(self):
+		return self.__send_delay
+
+	@send_delay.setter
+	def send_delay(self, send_delay):
+		self.__send_delay = send_delay
+
+	@property
+	def send_delay_enabled(self):
+		return self.__send_delay_enabled
+
+	@send_delay_enabled.setter
+	def send_delay_enabled(self, send_delay_enabled):
+		self.__send_delay_enabled = send_delay_enabled
+
 
 class Parameter(object):
 	""" Slash command parameter. """
