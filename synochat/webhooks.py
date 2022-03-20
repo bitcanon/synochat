@@ -63,7 +63,7 @@ class IncomingWebhook(object):
 		# Query the Synology Chat API and save the response
 		response = post(url, data=payload, headers=headers, params=params, verify=self.__verify_ssl)
 		
-		# Avoid API rate limit error, wail 0.5 seconds (default) between post creations
+		# Avoid API rate limit error, wait 0.5 seconds (default) between post creations
 		if self.send_delay_enabled:
 			sleep(self.send_delay)
 
