@@ -332,10 +332,17 @@ class SlashCommand(object):
 		self.__client_token = token
 		return token == self.__server_token
 
-	def createResponse(self, text, file_url=None):
+	def createResponse(self, text):
 		""" Send a text message to the channel associated with the token. """
-		returnDict = {'token': self.__client_token, 'text': text, 'user_id': self.__user_id, 'username': self.__username}
-		return returnDict
+		payload_data = {
+			'text': text,
+		}
+
+		# Check if there is a URL to include in the request
+		#if file_url:
+		#	payload_data['file_url'] = file_url
+
+		return json.dumps(payload_data)
 
 	def invalidTokenResponse(self):
 		""" Return an invalid token HTTP response. """
